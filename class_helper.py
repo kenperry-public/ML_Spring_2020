@@ -121,7 +121,7 @@ class Classification_Helper():
                               s=s,
                               c = colors[i], 
                               cmap=cmap,
-                              label = labels[j],
+                              label = labels[i],
                               edgecolor='black' # Outline of point
                 )
             _= ax.legend()
