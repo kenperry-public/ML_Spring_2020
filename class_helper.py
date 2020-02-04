@@ -126,16 +126,22 @@ class Classification_Helper():
                 )
             _= ax.legend()
                 
-        _= ax.set_xlabel('$x_0$')
-        _= ax.set_ylabel('$x_1$')
+        _= ax.set_xlabel('$x_1$')
+        _= ax.set_ylabel('$x_2$')
 
         # The following apply only when clf is an SVC
         # plot decision boundary and margins
-        has_fn = hasattr(clf, "decision_function")
+        has_fn = hasattr(clf, "decision_function") or hasattr(clf, "predict_proba")
         if has_fn and show_margins:
             # NOTE: args are X1, X0 NOT X0, X1
-            dec_fn = clf.decision_function(xy).reshape(X0.shape)
-            _= ax.contour(X0, X1, dec_fn,
+            if hasattr(clf, "decision_function"):
+                Z = clf.decision_function(xy)
+            else:
+                Z = clf.predict_proba(xy)[:, 1]
+
+            Z = Z.reshape(X0.shape)
+            
+            _= ax.contour(X0, X1, Z,
                           colors='k',
                           levels=margins,
                           alpha=0.5,

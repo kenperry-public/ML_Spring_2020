@@ -2,14 +2,93 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn import datasets, linear_model
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn import pipeline
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import cross_val_score, validation_curve
 
+import os
 import functools
 
 from mpl_toolkits import mplot3d
 from ipywidgets import interact, fixed
 
 import pdb
+
+class Charts_Helper():
+    def __init__(self, save_dir="/tmp", visible=True, **params):
+        self.X, self.y = None, None
+        self.save_dir = save_dir
+
+        self.visible = visible
+
+        return
+
+    def create_data(self, n_samples=30):
+        # Load the diabetes dataset
+        X, y = datasets.load_diabetes(return_X_y=True)
+
+        self.X, self.y = X, y
+    
+    def create_fit(self, n_samples=30):
+        X, y = self.X, self.y
+        save_dir = self.save_dir
+        visible = self.visible
+        
+        # Use only one feature
+        X = X[:, np.newaxis, 2]
+
+        # Split the data into training/testing sets
+        X_train = X[:-n_samples]
+        X_test = X[-n_samples:]
+
+        # Split the targets into training/testing sets
+        y_train = y[:-n_samples]
+        y_test = y[-n_samples:]
+
+        # Create linear regression object
+        regr = linear_model.LinearRegression()
+        self.regr = regr
+
+        # Train the model using the training sets
+        regr.fit(X_train, y_train)
+
+        # Plot train
+        fig, ax = plt.subplots(1,1, figsize=(5,3))
+        _= ax.scatter(X_train, y_train,  color='black')
+        _= ax.set_xlabel("x")
+        _= ax.set_ylabel("y")
+
+        ax.xaxis.set_major_formatter(plt.NullFormatter())
+        ax.yaxis.set_major_formatter(plt.NullFormatter())
+
+        scatter_file = os.path.join(save_dir, "regr_scatter.jpg")
+        fig.savefig(scatter_file)
+        
+        if not visible:
+            plt.close(fig)
+            
+        # Plot fit
+        fig1, ax1 = plt.subplots(1,1, figsize=(5,3))
+        _= ax1.scatter(X_train, y_train,  color='black')
+        _= ax1.set_xlabel("x")
+        _= ax1.set_ylabel("y")
+
+        ax1.xaxis.set_major_formatter(plt.NullFormatter())
+        ax1.yaxis.set_major_formatter(plt.NullFormatter())
+
+        y_train_pred = regr.predict(X_train)
+
+        sort_idx = X_train[:, 0].argsort()
+        _= ax1.plot( X_train[sort_idx, 0], y_train_pred[sort_idx], color="red", linewidth=3)
+
+        fit_file = os.path.join(save_dir, "regr_scatter_with_fit.jpg")
+        fig.savefig(fit_file)
+        
+        if not visible:
+            plt.close(fig1)
+            
+        return ax, ax1
 
 class Recipe_Helper():
     def __init__(self, v=4,  a=0, **params):
@@ -268,3 +347,115 @@ class Recipe_Helper():
         ax.scatter(X, resid_curve)
         _ = ax.set_xlabel(xlabel)
         _ = ax.set_ylabel("Residual")
+
+class Bias_vs_Variance_Helper():
+    def __init__(self, true_fun, pipe, **params):
+        self.true_fun = true_fun
+        self.pipe = pipe
+        self.X, self.y = None, None
+
+        return
+
+
+    def create_data(self,  n_samples=30):
+        true_fun = self.true_fun
+        np.random.seed(0)
+        
+        X = np.sort(np.random.rand(n_samples))
+
+        y = true_fun(X) + np.random.randn(n_samples) * 0.1
+
+        self.X, self.y = X, y
+        return X, y
+
+    def plot_degrees(self, degrees=[1,4,15]):
+        X, y = self.X, self.y
+        true_fun = self.true_fun
+        pipe = self.pipe
+        
+        if X is None or y is None:
+            print("X, y need to be initialized")
+            return None
+        
+        fig, axs = plt.subplots(1, len(degrees), figsize=(12,6))
+        axs = list(axs)
+
+        for i, degree in enumerate(degrees):
+            # Create pipeline with fixed polynomial degree
+            polynomial_features = PolynomialFeatures(degree, include_bias=False)
+            linear_regression = linear_model.LinearRegression(degree)
+            pipe = pipeline.Pipeline([("polynomial_features", polynomial_features),
+                                      ("linear_regression", linear_regression)])
+
+            ax = axs[i]
+            
+            _= pipe.fit(X[:, np.newaxis], y)
+
+            # Evaluate the models using crossvalidation
+            scores = cross_val_score(pipe, X[:, np.newaxis], y,
+                                     scoring="neg_mean_squared_error", cv=10)
+
+            X_test = np.linspace(0, 1, 100)
+            _= ax.plot(X_test, pipe.predict(X_test[:, np.newaxis]), label="Model")
+            _= ax.plot(X_test, true_fun(X_test), label="True function")
+            _= ax.scatter(X, y, edgecolor='b', s=20, label="Samples")
+            _= ax.set_xlabel("x")
+            _= ax.set_ylabel("y")
+            _= ax.set_xlim((0, 1))
+            _= ax.set_ylim((-2, 2))
+            _= ax.legend(loc="best")
+
+            test_mse, test_std = - scores.mean(), scores.std()
+            fmt = "{:3.2f}" if test_mse < 1000 else "{:.2e}"
+            _= ax.set_title(("Degree {}\nTest MSE = " + fmt + " (+/- " + fmt +")").format(
+                degree, test_mse, test_std))
+        fig.tight_layout()
+
+        return fig, axs
+
+    def plot_validation_curve(self, degrees=[1,4,15]):
+        X, y = self.X, self.y
+        pipe = self.pipe
+
+        # Compute train and test scores, for each degree in degrees
+        param_range = degrees
+        train_scores, test_scores = validation_curve(
+            pipe, X[:, np.newaxis], y, param_name="polynomial_features__degree", param_range=param_range,
+            scoring="neg_mean_squared_error", n_jobs=1, cv=10)
+
+        # Average.StdDev of scores for each degree
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+
+        # Scores are NEGATIVE errors, convert to error
+        mse_train, mse_test = -train_scores_mean, - test_scores_mean
+        
+        # Plot (vs degree) Training and Test scores
+        fig, ax = plt.subplots(1,1, figsize=(12,6))
+
+        _= ax.set_title("Train/Test MSE")
+        _= ax.set_xlabel(r"degree")
+        _= ax.set_ylabel("Train Score")
+        _= ax.set_ylim(mse_train.min(), mse_train.max())
+        lw = 2
+        _= ax.plot(param_range, mse_train, label="Training score",
+                     color="darkorange", lw=lw)
+
+        _= ax.legend()
+
+        axr = ax.twinx()
+
+        #mse_test = np.maximum(mse_test, 1)
+        mse_test_max_plot = 1
+        mse_test2 = np.minimum(mse_test,1)
+
+        _= axr.plot(param_range, mse_test2, label="Cross-validation score",
+                     color="navy", lw=lw)
+        _= axr.set_ylabel("Test Score")
+        _= axr.set_ylim(mse_test.min(), mse_test_max_plot) 
+
+        _= axr.legend()
+
+        return fig, ax
