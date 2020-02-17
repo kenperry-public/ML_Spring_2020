@@ -124,14 +124,28 @@ class SVM_Helper():
 
 
     # Adapted from external/PythonDataScienceHandbook/notebooks/05.07-Support-Vector-Machines.ipynb
-    
-    def make_circles(self, plot=False):
+
+    def val_to_color(self, y):
+        cdict = { 0: "red", 1: "green"}
+        c = [ cdict[y_val] for y_val in y]
+
+        return c
+        
+    def make_circles(self, ax=None, plot=False):
+        if ax is None:
+            fig, ax = plt.subplots(1,1, figsize=(12,6) )
+            
         X, y = make_circles(100, factor=.1, noise=.1)
 
         if plot:
-            plt.scatter(X[:, 0], X[:, 1], c=y, s=50, cmap='autumn')
-            plt.xlabel("$x_1$")
-            plt.ylabel("$x_2$")
+            mask = y > 0
+            ax.scatter(X[mask, 0], X[mask, 1], c=self.val_to_color(y[mask]), s=50, label="Positive")
+            ax.scatter(X[~mask, 0], X[~mask, 1], c=self.val_to_color(y[~mask]), s=50, label="Negative")
+            
+            # plt.scatter(X[:, 0], X[:, 1], c=self.val_to_color(y), s=50, cmap='autumn')
+            ax.set_xlabel("$x_1$")
+            ax.set_ylabel("$x_2$")
+            ax.legend()
             
         return X,y
 
@@ -140,11 +154,11 @@ class SVM_Helper():
         """
         Plot the decision function for a 2D SVC
         """
-        
         if ax is None:
             ax = plt.gca()
-            xlim = ax.get_xlim()
-            ylim = ax.get_ylim()
+            
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
 
         # create grid to evaluate model
         x = np.linspace(xlim[0], xlim[1], 30)
@@ -170,16 +184,30 @@ class SVM_Helper():
         plt.ylabel("$x_2$")
             
 
-    def circles_linear(self, X, y):
+    def circles_linear(self, X, y, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots(1,1, figsize=(12,6) )
+            
         clf = SVC(kernel='linear').fit(X, y)
 
-        plt.scatter(X[:, 0], X[:, 1], c=y, s=50, cmap='autumn')
-        self.plot_svc_decision_function(clf, plot_support=False);
+        mask = y > 0
+        ax.scatter(X[mask, 0], X[mask, 1], c=self.val_to_color(y[mask]), s=50, label="Positive")
+        ax.scatter(X[~mask, 0], X[~mask, 1], c=self.val_to_color(y[~mask]), s=50, label="Negative")
+        ax.legend()
+        
+        self.plot_svc_decision_function(clf, ax=ax, plot_support=False);
 
   
-    def plot_3D(self, elev=30, azim=30, X=[], y=[]):
-        ax = plt.subplot(projection='3d')
-        ax.scatter3D(X[:, 0], X[:, 1], X[:, 2], c=y, s=50, cmap='autumn')
+    def plot_3D(self, elev=30, azim=30, X=[], y=[], ax=None):
+        if ax is None:
+            ax = plt.subplot(projection='3d')
+            
+        #ax.scatter3D(X[:, 0], X[:, 1], X[:, 2], c=y, s=50, cmap='autumn')
+        mask = y > 0
+        ax.scatter(X[mask, 0], X[mask, 1], X[mask, 2],  c=self.val_to_color(y[mask]), s=50, label="Positive")
+        ax.scatter(X[~mask, 0], X[~mask, 1], X[~mask, 2], c=self.val_to_color(y[~mask]), s=50, label="Negative")
+        ax.legend()
+
         ax.view_init(elev=elev, azim=azim)
 
         ax.set_xlabel("$x_1$")
