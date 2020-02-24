@@ -38,6 +38,9 @@ class Classification_Helper():
                         labels=None,
                         scatter=True,
                         xlims=None,
+                        feature_names=None,
+                        alpha=0.75,
+                        show_legend=True,
                         show_margins=False, show_vectors=False,
                         margins=[-1, 0, 1]
                         ):
@@ -77,6 +80,9 @@ class Classification_Helper():
         if labels is None:
             labels=range(0, np.unique(y).shape[0])
 
+        if feature_names is None:
+            feature_names = [ "$x_{idx:d}$".format(idx=i+1) for i in range(0, 2) ]
+            
         # Set limits for each feature
         if xlims:
             x0_min, x0_max = xlims[0]
@@ -101,7 +107,7 @@ class Classification_Helper():
         
         # Plot the predictions, color coded by label (y)
         _= ax.contourf(X0, X1, predicts,
-                       alpha = 0.75,
+                       alpha = alpha,
                        cmap=cmap
                        )
 
@@ -124,10 +130,11 @@ class Classification_Helper():
                               label = labels[i],
                               edgecolor='black' # Outline of point
                 )
-            _= ax.legend()
+            if show_legend:
+                _= ax.legend()
                 
-        _= ax.set_xlabel('$x_1$')
-        _= ax.set_ylabel('$x_2$')
+        _= ax.set_xlabel(feature_names[0])
+        _= ax.set_ylabel(feature_names[1])
 
         # The following apply only when clf is an SVC
         # plot decision boundary and margins
