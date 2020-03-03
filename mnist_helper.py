@@ -172,10 +172,9 @@ class MNIST_Helper():
             _ = ax.set_yticks(())
             _ = ax.set_xlabel('Class %i' % i)
 
-        _ =fig.suptitle('Parameters for...')
+        _= fig.suptitle('Parameters for...')
 
 
-        _ = fig.show()
         return fig, ax
 
 

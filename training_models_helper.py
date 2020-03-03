@@ -24,9 +24,11 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 
-from ipywidgets import interact, interactive, fixed, interact_manual
+from ipywidgets import interact, interactive, fixed, interact_manual, Image
 import ipywidgets as widgets
 
+
+from IPython import display
 from matplotlib import animation
 from IPython.display import HTML
 
@@ -225,7 +227,158 @@ class GradientDescentHelper():
     def show_movie(self, anim):
         return HTML(anim.to_html5_video())
 
+    """
+    Create animation of gradient descent
+    - Define function f
+    - Numerically compute derivaties: deriv
+    -- this enables computation of slope and tangent line
+    """
+    def def_f(self):
+        def f(x):
+            return x**2
 
+        return f
+
+    def def_deriv(self):
+        def deriv(f, x_0):
+            h = 0.000000001                 #step-size 
+            return (f(x_0 +h) - f(x_0))/h
+
+        return deriv
+
+    def def_tangent(self):
+        deriv = self.deriv
+        
+        def tangent(f, x_0, x=None):
+            y_0 = f(x_0)
+            slope = deriv(f, x_0)
+
+            if x is not None:
+                r = 2
+                xmin, xmax = np.min(x), np.max(x)
+                xlo, xhi = max(x_0 -r, xmin), min(x_0 +r, xmax)
+            else:
+                r = 2
+                xlo, xhi = x_0 -r, x_0 + r
+   
+            xline = np.linspace(xlo, xhi, 10)
+            yline = y_0 + slope*( xline - x_0)
+    
+            return xline, yline
+
+        return tangent
+
+
+    # Create an "initialization" function for the animation
+    # Reference on animations
+    # https://nbviewer.jupyter.org/github/WillClaudeHolmes/Jupyter_Examples/blob/master/AnimationIllustration.ipynb
+    
+    def def_init2(self, x, f, x_0, alpha=0.3, xtitle=None, ytitle=None, Debug=False):
+        # First set up the figure, the axis, and the plot element we want to animate
+        plt.ioff()
+        fig = plt.figure()
+        ax = plt.axes()
+
+        if xtitle is not None:
+            ax.set_xlabel(xtitle)
+
+        if ytitle is not None:
+            ax.set_ylabel(ytitle, rotation=0, fontsize=16)
+        
+        line, = ax.plot([], [], c="g", lw=2)
+
+        self.fig, self.ax, self.line = fig, ax, line
+        self.f, self.x, self.x_s = f, x, x_0
+
+        self.deriv   = self.def_deriv()
+        self.tangent = self.def_tangent()
+
+
+        self.alpha = alpha
+        
+        def init():
+            if Debug:
+                print("Init")
+            
+            # Plot function
+            _= ax.plot(x, f(x), "b", linewidth=1)
+
+            line.set_data([], [])
+            line.set_linestyle("-")
+
+            plt.show()
+            return line,
+        
+        return init, fig
+
+    def def_animate2(self, Debug=False):
+        ax, line = self.ax, self.line
+        
+        def animate(i):
+            if Debug and (i % 10 == 0):
+                print("animate: ", i)
+                
+
+            f, x, x_s = self.f, self.x, self.x_s
+            tangent, deriv = self.tangent, self.deriv
+            alpha = self.alpha
+            
+            # Display the tangent point
+            y_s = f(x_s)
+            ax.scatter(x_s, y_s, color='C1', s=50)
+
+            # Obtain tangent line at x0
+            xtang, ytang = tangent(f, x_s, x)
+
+            line.set_data(xtang, ytang)
+            line.set_linestyle("--")
+
+            # Update x_s
+            slope = deriv(f, x_s)
+            x_s_new = x_s + alpha * (- slope)
+
+            if Debug:
+                print("animate: x from ", x_s, " to ", x_s_new)
+            
+            x_s = x_s_new
+
+            self.x_s = x_s
+
+            return line,
+
+        return animate
+
+
+    def create_gif2(self, x, f, x_0, out="/tmp/gd.gif", alpha=0.9):
+        # Create initialization
+        init_func, fig = self.def_init2(x, f, x_0, alpha=alpha,
+                                        xtitle="$\Theta$",
+                                        ytitle="$\mathcal{L}$")
+
+        # Create iterative function: next frame
+        animate_func = self.def_animate2()
+
+        # Create animation control: initialized and iterate
+        anim = animation.FuncAnimation(fig, animate_func, init_func=init_func,
+                             frames=30, interval=2000, blit=True)
+
+
+        # Run the animation and save it
+        anim.save(out, writer='imagemagick')
+
+        return anim
+
+    def display_gif(self, out):
+        animatedGif = out #path relative to your notebook
+        file = open(animatedGif , "rb")
+        image = file.read()
+        progress= Image(
+            value=image,
+            format='gif',
+            width=1000,
+            height=600)
+        display.display(progress)
+        
 class InfluentialHelper():
     def __init__(self, **params):
         return

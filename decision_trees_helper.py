@@ -488,7 +488,7 @@ class RegressionHelper():
             fig_tree, ax_tree = ret_tree["plt"]["fig"], ret_tree["plt"]["ax"]
             plt.close(fig_tree)
 
-            # Collect the plots
+            # Collect the plots>
             fig_trees.append(fig_tree)
             ax_trees.append(ax_tree)
 

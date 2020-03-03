@@ -422,6 +422,17 @@ class SVM_Helper():
 
 class Charts_Helper():
     def __init__(self, save_dir="/tmp", visible=True, **params):
+        """
+        Class to produce charts (pre-compute rather than build on the fly) to include in notebook
+
+        Parameters
+        ----------
+        X: ndarray. Two dimensionsal feature
+        y: ndarray. One dimensional target
+
+        save_dir: String.  Directory in which charts are created
+        visible: Boolean.  Create charts but do/don't display immediately
+        """
         self.X, self.y = None, None
         self.save_dir = save_dir
 
@@ -444,6 +455,14 @@ class Charts_Helper():
         self.X, self.y = X, y
       
     def create_sep_bound(self):
+        """
+        Chart to illustrate sensitivity of model to examples near margin
+
+        Create chart showing separating boundary
+        - Same training examples
+        - Same SVC
+        - Different value for C
+        """
         svmh, clh = self.svmh, self.clh
         X, y = self.X, self.y
 
@@ -454,6 +473,8 @@ class Charts_Helper():
         fig, axs = plt.subplots(1,2, figsize=(12,6) )
 
         axs = np.ravel(axs)
+
+        # Train same model/same data, with different values for C
         for i, C in enumerate(Cs):
             ax = axs[i]
             clf = svm.SVC(kernel='linear', C=C)
@@ -472,11 +493,16 @@ class Charts_Helper():
         return fig, ax
 
     def create_sens(self):
+        """
+        Create figure showing sensitivity of a classifier to new examples far fro boundary
+        """
+        
         svmh, clh = self.svmh, self.clh
         
         X, y = self.X, self.y
         visible = self.visible
-        
+
+        # Create the classifier models
         clf_log = linear_model.LogisticRegression(solver='lbfgs', max_iter=1000, C=10)
         clf_svm = svm.SVC(kernel='linear', C=10)
 
@@ -489,19 +515,26 @@ class Charts_Helper():
 
         clf_c = clf_svm
 
+        # Create one row of figure for each model
         for i, clf_spec in enumerate( [ (clf_log, "Logistic"), (clf_svm, "SVC") ]):
             clf, title = clf_spec
             X, y = X_orig, y_orig
 
+            # Run the model twice:
+            # - Once with original examples
+            # - Second time after adding examples to original
             for j in [0,1]:
                 ax = axs[i,j]
 
+                # Plot model results/separating boundary
                 _= clf.fit(X, y)
                 _= clh.plot_boundary_2(clf, X, y, ax=ax, scatter=True,
                                        cmap=ListedColormap(('navajowhite', 'darkkhaki')),
                                        show_margins=True, margins=[-.001, 0, .001]
                                       )
 
+                # Compute the SVC maring
+                # - need to ensure that newly added examples are outside the margin
                 margin = 1 / np.sqrt(np.sum(clf.coef_[0] ** 2))
 
                 # Add a bunch of class=1 examples on the correct side of the original boundary
@@ -528,7 +561,7 @@ class Charts_Helper():
                 y = np.concatenate( (y, y_add), axis=0) 
 
                 eqns = svmh.svm_equations(clf)
-                _= ax.set_title("Logistic: {e:s}".format(e=eqns[0]))
+                _= ax.set_title("{m:s}: {e:s}".format(m=title, e=eqns[0]))
 
         fig.tight_layout()
 
