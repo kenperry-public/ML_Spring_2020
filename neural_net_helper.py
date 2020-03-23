@@ -36,21 +36,27 @@ class NN_Helper():
         fig, axs = plt.subplots(3,2, figsize=(16, 8))
         _ = axs[0,0].plot(x, sigm)
         _ = axs[0,0].set_title("sigmoid")
+        _ = axs[0,0].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
         
         _ = axs[0,1].plot(x, d_sigm)
         _ = axs[0,1].set_title("derivative sigmoid")
+        _ = axs[0,1].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
         
         _ = axs[1,0].plot(x, np.tanh(x))
         _ = axs[1,0].set_title("tanh")
+        _ = axs[1,0].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
         
         _ = axs[1,1].plot(x, d_tanh)
         _ = axs[1,1].set_title("derivative tanh")
+        _ = axs[1,1].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
         
         _ = axs[2,0].plot(x, np.maximum(0.0, x))
         _ = axs[2,0].set_title("ReLU")
+        _ = axs[2,0].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
         
         _ = axs[2,1].plot(x, d_relu)
         _ = axs[2,1].set_title("derivative ReLU")
+        _ = axs[2,1].set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
 
         _ = fig.tight_layout()
         return fig, axs
