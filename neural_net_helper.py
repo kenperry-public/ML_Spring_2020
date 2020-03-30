@@ -80,7 +80,8 @@ class NN_Helper():
             _ = ax.plot(x, y, label="{w:d}x + {b:3.2f}".format(w=W, b=b))
             
             _ = ax.legend()
-            _ = ax.set_xlabel("x")
+            _ = ax.set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
+            #_ = ax.set_xlabel("x")
             _ = ax.set_ylabel("activation")
             _ = ax.set_title("Step function creation")
 
