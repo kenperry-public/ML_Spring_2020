@@ -283,9 +283,9 @@ class GradientDescentHelper():
             ax.set_xlabel(xtitle)
 
         if ytitle is not None:
-            ax.set_ylabel(ytitle, rotation=0, fontsize=16)
+            _= ax.set_ylabel(ytitle, rotation=0, fontsize=16)
         
-        line, = ax.plot([], [], c="g", lw=2)
+        line, = ax.plot([], [], c="g")
 
         self.fig, self.ax, self.line = fig, ax, line
         self.f, self.x, self.x_s = f, x, x_0
@@ -301,7 +301,7 @@ class GradientDescentHelper():
                 print("Init")
             
             # Plot function
-            _= ax.plot(x, f(x), "b", linewidth=1)
+            _= ax.plot(x, f(x), "b")
 
             line.set_data([], [])
             line.set_linestyle("-")
@@ -325,7 +325,7 @@ class GradientDescentHelper():
             
             # Display the tangent point
             y_s = f(x_s)
-            ax.scatter(x_s, y_s, color='C1', s=50)
+            ax.scatter(x_s, y_s, color='r', s=90)
 
             # Obtain tangent line at x0
             xtang, ytang = tangent(f, x_s, x)
@@ -349,7 +349,7 @@ class GradientDescentHelper():
         return animate
 
 
-    def create_gif2(self, x, f, x_0, out="/tmp/gd.gif", alpha=0.9):
+    def create_gif2(self, x, f, x_0, out="/tmp/gd.gif", alpha=0.9, delay=5):
         # Create initialization
         init_func, fig = self.def_init2(x, f, x_0, alpha=alpha,
                                         xtitle="$\Theta$",
@@ -360,11 +360,11 @@ class GradientDescentHelper():
 
         # Create animation control: initialized and iterate
         anim = animation.FuncAnimation(fig, animate_func, init_func=init_func,
-                             frames=30, interval=2000, blit=True)
+                             frames=30, interval=(delay*1000), blit=True)
 
 
         # Run the animation and save it
-        anim.save(out, writer='imagemagick')
+        _= anim.save(out, writer='imagemagick')
 
         return anim
 
