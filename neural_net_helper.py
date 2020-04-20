@@ -62,6 +62,13 @@ class NN_Helper():
         return fig, axs
 
     def NN(self, W,b):
+        """
+        Create a "neuron" z = ReLu( W*x + b )
+        Returns dict
+        - key "x": range of input values x
+        - key "y": y = W*x + b
+        - Key "z": z = max(0, y)
+        """
         x = np.linspace(-100, 100, 100)
         z = W*x + b
         
@@ -88,10 +95,40 @@ class NN_Helper():
         _ = fig.tight_layout()
         return fig, ax
 
-        
+    def step_fn_plot(self, visible=True):
+        slope = 1000
+        start_offset = 0
+
+        start_step = self.NN(slope, -start_offset)
+
+        end_offset = start_offset + .0001
+
+        end_step = self.NN(slope,- end_offset)
+
+        step= {"x": start_step["x"], 
+               "y": start_step["y"] - end_step["y"],
+               "W": slope,
+               "b": 0
+              }
+        fig, ax = self.plot_steps( [  step ] )
+
+        if not visible:
+            plt.close(fig)
+
+        return fig, ax
             
+    def sigmoid_fn_plot(self, visible=True):
+        fig, ax = plt.subplots(1,1, figsize=(6,4))
+        x =np.arange(-5,5, 0.1)
+        sigm   = self.sigmoid(x)
+        _ = ax.plot(x, sigm)
+        _= ax.set_title("sigmoid")
+        _= ax.set_xlabel("$y_{(l-1)} \cdot W_{l,j}$", fontsize=14)
 
+        if not visible:
+            plt.close(fig)
 
+        return fig, ax
     def plot_loss_fns(self):
         # prod = y * s(x)
         # Postive means correctly classified; negative means incorrectly classified
